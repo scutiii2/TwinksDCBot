@@ -1,11 +1,12 @@
 from __future__ import annotations
 from time import time
 from core.database import database
-from .actions import ModerationAction
+from .actions import ModerationAction as ModAction, ModerationActionIcon as ModIcon, ModerationActionColor as ModColor
 from .repository import ModerationRepository
-from core.ui import EphemeralMessage
-from discord import Color
+from core.ui import PublicMessage, EphemeralMessage
 from dataclasses import dataclass
+from discord import Interaction, Member, User
+from core.guild import guild_setup
 
 @dataclass(slots=True)
 class MessageField:
@@ -16,25 +17,57 @@ class ModerationService:
     async def create_message(
         self,
         case: int,
-        member_name: str,
-        service_type: ModerationAction,
-        color: Color = Color.blurple(),
-        fields: list[MessageField] | None = None,
-    ) -> EphemeralMessage:
-        message = EphemeralMessage(
-            title=f"[Case #{case}] {service_type.value.title()} - {member_name}",
-            color=color,
+        service_type: ModAction,
+        interaction: Interaction,
+        member: Member | None = None,
+        user: User | None = None,
+        reason: str | None = None,
+        note: str | None = None
+    ) -> PublicMessage:
+        channel = await guild_setup.moderation_channel(interaction.guild)
+        message = (PublicMessage(
+            title=f"[Case #{case}] {ModIcon[service_type.name]} {service_type.value.title()}",
+            color=ModColor[service_type.name],
+            )
+            .add_field(
+                title="Moderator",
+                value=interaction.user.mention,
+            )
         )
-
-        if fields:
-            for field in fields:
-
-                message.add_field(
-                    title=field.title,
-                    value=field.value,
+        
+        if member:
+            message.add_field(
+                    title="Member",
+                    value=member.mention,
                 )
-
-        return message
+            
+        if user:
+            message.add_field(
+                    title="User",
+                    value=user,
+                )
+        
+        if reason:
+            message.add_field(
+                    title="Reason",
+                    value=reason,
+                )
+            
+        if note:
+            message.add_field(
+                    title="Note",
+                    value=note,
+                )
+            
+        await message.channel(channel)
+        
+        await (
+            EphemeralMessage(
+                title=f"{ModIcon[service_type.name]} {service_type.value.title()} to {member.display_name}",
+                color=ModColor[service_type.name],
+            )
+            .send(interaction)
+        )
 
     async def repository(
         self,
@@ -62,7 +95,7 @@ class ModerationService:
         return await repo.create_case(
             target_id=target_id,
             moderator_id=moderator_id,
-            action=ModerationAction.WARN,
+            action=ModAction.WARN,
             reason=reason,
             created_at=int(time()),
         )
@@ -83,7 +116,7 @@ class ModerationService:
         return await repo.create_case(
             target_id=target_id,
             moderator_id=moderator_id,
-            action=ModerationAction.TIMEOUT,
+            action=ModAction.TIMEOUT,
             reason=reason,
             created_at=now,
             expires_at=now + duration,
@@ -102,7 +135,7 @@ class ModerationService:
         return await repo.create_case(
             target_id=target_id,
             moderator_id=moderator_id,
-            action=ModerationAction.KICK,
+            action=ModAction.KICK,
             reason=reason,
             created_at=int(time()),
         )
@@ -120,7 +153,7 @@ class ModerationService:
         return await repo.create_case(
             target_id=target_id,
             moderator_id=moderator_id,
-            action=ModerationAction.BAN,
+            action=ModAction.BAN,
             reason=reason,
             created_at=int(time()),
         )
@@ -138,7 +171,7 @@ class ModerationService:
         return await repo.create_case(
             target_id=target_id,
             moderator_id=moderator_id,
-            action=ModerationAction.NOTE,
+            action=ModAction.NOTE,
             reason=note,
             created_at=int(time()),
         )
@@ -166,7 +199,7 @@ class ModerationService:
         return await repo.create_case(
             target_id=target_id,
             moderator_id=moderator_id,
-            action=ModerationAction.UNBAN,
+            action=ModAction.UNBAN,
             reason=reason,
             created_at=int(time()),
         )
@@ -185,7 +218,7 @@ class ModerationService:
         return await repo.create_case(
             target_id=target_id,
             moderator_id=moderator_id,
-            action=ModerationAction.UNTIMEOUT,
+            action=ModAction.UNTIMEOUT,
             reason=reason,
             created_at=int(time()),
         )
@@ -201,7 +234,7 @@ class ModerationService:
 
         return await repo.clear_action(
             target_id,
-            ModerationAction.WARN,
+            ModAction.WARN,
         )
 
 

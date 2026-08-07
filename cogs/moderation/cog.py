@@ -10,8 +10,8 @@ from discord import app_commands
 from discord.ext import commands
 from .service import ModerationService
 from datetime import timedelta
-from core.guild import guild_setup
-from core.ui.message import PublicMessage, EphemeralMessage
+from .actions import ModerationAction
+from core.ui.message import EphemeralMessage
 
 '''
 ===============================================================================
@@ -53,36 +53,12 @@ class ModerationCog(commands.Cog):
             reason=reason,
         )
         
-        channel = await guild_setup.moderation_channel(
-            interaction.guild
-        )
-
-        await (
-            PublicMessage(
-                title=f"[Case #{case}] ⚠ Warning Issued",
-                color=discord.Color.orange(),
-            )
-            .add_field(
-                title="Member",
-                value=member.mention,
-            )
-            .add_field(
-                title="Moderator",
-                value=interaction.user.mention,
-            )
-            .add_field(
-                title="Reason",
-                value=reason or "No reason provided.",
-            )
-            .channel(channel)
-        )
-        
-        await (
-            EphemeralMessage(
-                title=f"⚠ Warning Issued to {member.display_name}",
-                color=discord.Color.orange(),
-            )
-            .send(interaction)
+        await self.service.create_message(
+            case,
+            ModerationAction.WARN,
+            interaction,
+            member=member,
+            reason=reason
         )
 
 # -----------------------------------------------------------------------------
@@ -111,9 +87,13 @@ class ModerationCog(commands.Cog):
             moderator_id=interaction.user.id,
             reason=reason,
         )
-
-        await interaction.response.send_message(
-            f"👢 Kicked {member.mention}\nCase #{case}"
+        
+        await self.service.create_message(
+            case,
+            ModerationAction.KICK,
+            interaction,
+            member=member,
+            reason=reason
         )
 
 # -----------------------------------------------------------------------------
@@ -146,9 +126,13 @@ class ModerationCog(commands.Cog):
             moderator_id=interaction.user.id,
             reason=reason,
         )
-
-        await interaction.response.send_message(
-            f"🔨 Banned {member.mention}\nCase #{case}"
+        
+        await self.service.create_message(
+            case,
+            ModerationAction.BAN,
+            interaction,
+            member=member,
+            reason=reason
         )
 
 # -----------------------------------------------------------------------------
@@ -184,9 +168,13 @@ class ModerationCog(commands.Cog):
             duration=int(duration.total_seconds()),
             reason=reason,
         )
-
-        await interaction.response.send_message(
-            f"⏱️ Timed out {member.mention}\nCase #{case}"
+        
+        await self.service.create_message(
+            case,
+            ModerationAction.TIMEOUT,
+            interaction,
+            member=member,
+            reason=reason
         )
 
 # -----------------------------------------------------------------------------
@@ -213,21 +201,13 @@ class ModerationCog(commands.Cog):
             moderator_id=interaction.user.id,
             note=note,
         )
-
-        embed = discord.Embed(
-            title=f"[Case #{case}] 📝Note: {member}",
-            color=discord.Color.orange(),
-        )
-
-        embed.add_field(
-            name=f"",
-            value=note,
-            inline=True,
-        )
-            
-        await interaction.response.send_message(
-            embed=embed,
-            ephemeral=True,
+        
+        await self.service.create_message(
+            case,
+            ModerationAction.NOTE,
+            interaction,
+            member=member,
+            note=note
         )
 
 # -----------------------------------------------------------------------------
@@ -307,9 +287,13 @@ class ModerationCog(commands.Cog):
             target_id=user.id,
             reason=reason,
         )
-
-        await interaction.response.send_message(
-            f"✅ Unbanned {user.mention}\nCase #{case}"
+        
+        await self.service.create_message(
+            case,
+            ModerationAction.WARN,
+            interaction,
+            user=user,
+            reason=reason
         )
 
 # -----------------------------------------------------------------------------
@@ -341,11 +325,14 @@ class ModerationCog(commands.Cog):
             target_id=member.id,
             reason=reason,
         )
-
-        await interaction.response.send_message(
-            f"✅ Timeout removed.\nCase #{case}"
+        
+        await self.service.create_message(
+            case,
+            ModerationAction.UNTIMEOUT,
+            interaction,
+            member=member,
+            reason=reason
         )
-
 # -----------------------------------------------------------------------------
 # &&Method purge
 #   Purge latest the message/s of a member and records it
@@ -397,9 +384,13 @@ class ModerationCog(commands.Cog):
             interaction.guild.id,
             member.id,
         )
-
-        await interaction.response.send_message(
-            f"Removed {count} warning(s)."
+        
+        await (
+            EphemeralMessage(
+                title=f"Cleared {count} warnings of {member.display_name}",
+                color=discord.Color.green()
+            )
+            .send(interaction)
         )
 
 # -----------------------------------------------------------------------------
