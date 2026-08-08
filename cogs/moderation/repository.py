@@ -1,35 +1,49 @@
+'''
+===============================================================================
+# Search '&&Method' to see the start of every method
+===============================================================================
+'''
+
 from __future__ import annotations
-
 from pathlib import Path
-
+from typing import Literal
 from core.database.database import Database
-
 from .actions import ModerationAction
 
-
+'''
+===============================================================================
+# &&Class ModerationRepository
+#   Talks to database
+#   CASES SHOULD NOT BE DELETED AND SHOULD ONLY BE CLOSED
+===============================================================================
+'''
 class ModerationRepository:
-
+# -----------------------------------------------------------------------------
+# &&Method constructor
+#   Requirements to be detected by database manager
+# -----------------------------------------------------------------------------
     MODULE = "moderation"
-
     MIGRATIONS = Path(__file__).parent / "migrations"
-
-    def __init__(
-        self,
-        database: Database,
-    ):
+    def __init__(self, database: Database):
         self.db = database
 
+# -----------------------------------------------------------------------------
+# &&Method next_case_number
+#   Database pointer of the repository
+# -----------------------------------------------------------------------------
     async def next_case_number(self) -> int:
-
         row = await self.db.fetchone(
             """
             SELECT COALESCE(MAX(case_number), 0) + 1 AS number
             FROM cases
             """
         )
-
         return row["number"]
 
+# -----------------------------------------------------------------------------
+# &&Method create_case
+#   Insert case into the database
+# -----------------------------------------------------------------------------
     async def create_case(
         self,
         target_id: int,
@@ -39,9 +53,7 @@ class ModerationRepository:
         created_at: int,
         expires_at: int | None = None,
     ) -> int:
-
         case_number = await self.next_case_number()
-
         await self.db.execute(
             """
             INSERT INTO cases(
@@ -67,14 +79,16 @@ class ModerationRepository:
                 expires_at,
             ),
         )
-
         return case_number
 
+# -----------------------------------------------------------------------------
+# &&Method get_case
+#   Fetch a specific case from the database
+# -----------------------------------------------------------------------------
     async def get_case(
         self,
-        case_number: int,
+        case_number: int
     ):
-
         return await self.db.fetchone(
             """
             SELECT *
@@ -84,26 +98,39 @@ class ModerationRepository:
             (case_number,),
         )
 
+# -----------------------------------------------------------------------------
+# &&Method get_cases
+#   Fetch cases of a member and can be filtered by action
+# -----------------------------------------------------------------------------
     async def get_cases(
         self,
         target_id: int,
+        action: ModerationAction | None = None,
+        active: Literal["True", "False", "All"] = "True"
     ):
-
-        return await self.db.fetchall(
-            """
+        query = """
             SELECT *
             FROM cases
-            WHERE target_id=?
-            ORDER BY case_number DESC
-            """,
-            (target_id,),
-        )
+            WHERE target_id = ?
+        """
+        params = [target_id]
+        if action:
+            query += " AND action = ?"
+            params.append(action.value)
+        if active != "All":
+            query += " AND active = ?"
+            params.append([0, 1][active == "True"])
+        query += " ORDER BY case_number DESC"
+        return await self.db.fetchall(query, params)
 
+# -----------------------------------------------------------------------------
+# &&Method close_case
+#   Closes a case
+# -----------------------------------------------------------------------------
     async def close_case(
         self,
         case_number: int,
     ):
-
         await self.db.execute(
             """
             UPDATE cases
@@ -112,12 +139,15 @@ class ModerationRepository:
             """,
             (case_number,),
         )
-            
+
+# -----------------------------------------------------------------------------
+# &&Method reopen_case
+#   Reopens a case
+# -----------------------------------------------------------------------------
     async def reopen_case(
         self,
         case_number: int,
     ) -> None:
-
         await self.db.execute(
             """
             UPDATE cases
@@ -127,39 +157,25 @@ class ModerationRepository:
             (case_number,),
         )
 
-
+# -----------------------------------------------------------------------------
+# &&Method clear_action
+#   Sets the active records of a member in a specific action
+# -----------------------------------------------------------------------------
     async def clear_action(
         self,
         target_id: int,
         action: ModerationAction,
     ) -> int:
-
         cursor = await self.db.execute(
             """
-            DELETE FROM cases
-            WHERE target_id = ?
-            AND action = ?
+            UPDATE cases
+            SET active=0
+            WHERE target_id=?
+            AND action=?
             """,
             (
                 target_id,
                 action.value,
             ),
         )
-
         return cursor.rowcount
-
-
-    async def delete_case(
-        self,
-        case_number: int,
-    ) -> bool:
-
-        cursor = await self.db.execute(
-            """
-            DELETE FROM cases
-            WHERE case_number = ?
-            """,
-            (case_number,),
-        )
-
-        return cursor.rowcount > 0

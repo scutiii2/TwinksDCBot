@@ -6,27 +6,55 @@
 
 from __future__ import annotations
 import discord
-from discord import app_commands
+from discord import app_commands, Color
 from discord.ext import commands
-from .service import ModerationService
 from datetime import timedelta
-from .actions import ModerationAction
+from typing import Literal
 from core.ui.message import EphemeralMessage
+from .service import ModerationService
+from .actions import ModerationAction
 
 '''
 ===============================================================================
 # &&Class ModerationCog
 #   For user types moderators
+#   Talks to UI
 ===============================================================================
 '''
 class ModerationCog(commands.Cog):
-
     def __init__(
         self,
         bot: commands.Bot,
     ):
         self.bot = bot
         self.service = ModerationService()
+
+# -----------------------------------------------------------------------------
+# &&Method purge
+#   Purge latest the message/s of a member
+# -----------------------------------------------------------------------------
+    @app_commands.command(
+        name="purge",
+        description="Delete messages."
+    )
+    @app_commands.default_permissions(
+        manage_messages=True,
+    )
+    async def purge(
+        self,
+        interaction: discord.Interaction,
+        amount: app_commands.Range[int, 1, 100],
+    ):
+        await interaction.response.defer(
+            ephemeral=True,
+        )
+        deleted = await interaction.channel.purge(
+            limit=amount,
+        )
+        await interaction.followup.send(
+            f"Deleted {len(deleted)} messages.",
+            ephemeral=True,
+        )
 
 # -----------------------------------------------------------------------------
 # &&Method warn
@@ -45,14 +73,12 @@ class ModerationCog(commands.Cog):
         member: discord.Member,
         reason: str | None = None,
     ):
-
         case = await self.service.warn(
             guild_id=interaction.guild.id,
             target_id=member.id,
             moderator_id=interaction.user.id,
             reason=reason,
         )
-        
         await self.service.create_message(
             case,
             ModerationAction.WARN,
@@ -78,58 +104,16 @@ class ModerationCog(commands.Cog):
         member: discord.Member,
         reason: str | None = None,
     ):
-
         await member.kick(reason=reason)
-
         case = await self.service.kick(
             guild_id=interaction.guild.id,
             target_id=member.id,
             moderator_id=interaction.user.id,
             reason=reason,
         )
-        
         await self.service.create_message(
             case,
             ModerationAction.KICK,
-            interaction,
-            member=member,
-            reason=reason
-        )
-
-# -----------------------------------------------------------------------------
-# &&Method ban
-#   Ban a member and record it
-# -----------------------------------------------------------------------------
-    @app_commands.command(
-        name="ban",
-        description="Ban a member."
-    )
-    @app_commands.default_permissions(
-        ban_members=True,
-    )
-    async def ban(
-        self,
-        interaction: discord.Interaction,
-        member: discord.Member,
-        reason: str | None = None,
-        delete_message_days: app_commands.Range[int, 0, 7] = 0,
-    ):
-
-        await member.ban(
-            reason=reason,
-            delete_message_days=delete_message_days,
-        )
-
-        case = await self.service.ban(
-            guild_id=interaction.guild.id,
-            target_id=member.id,
-            moderator_id=interaction.user.id,
-            reason=reason,
-        )
-        
-        await self.service.create_message(
-            case,
-            ModerationAction.BAN,
             interaction,
             member=member,
             reason=reason
@@ -153,14 +137,11 @@ class ModerationCog(commands.Cog):
         minutes: app_commands.Range[int, 1, 40320],
         reason: str | None = None,
     ):
-
         duration = timedelta(minutes=minutes)
-
         await member.timeout(
             duration,
             reason=reason,
         )
-
         case = await self.service.timeout(
             guild_id=interaction.guild.id,
             target_id=member.id,
@@ -168,131 +149,11 @@ class ModerationCog(commands.Cog):
             duration=int(duration.total_seconds()),
             reason=reason,
         )
-        
         await self.service.create_message(
             case,
             ModerationAction.TIMEOUT,
             interaction,
             member=member,
-            reason=reason
-        )
-
-# -----------------------------------------------------------------------------
-# &&Method note
-#   Adds a note to a member and record it
-# -----------------------------------------------------------------------------
-    @app_commands.command(
-        name="note",
-        description="Add a moderation note."
-    )
-    @app_commands.default_permissions(
-        moderate_members=True,
-    )
-    async def note(
-        self,
-        interaction: discord.Interaction,
-        member: discord.Member,
-        note: str,
-    ):
-
-        case = await self.service.note(
-            guild_id=interaction.guild.id,
-            target_id=member.id,
-            moderator_id=interaction.user.id,
-            note=note,
-        )
-        
-        await self.service.create_message(
-            case,
-            ModerationAction.NOTE,
-            interaction,
-            member=member,
-            note=note
-        )
-
-# -----------------------------------------------------------------------------
-# &&Method history
-#   Checks the moderation history of a member
-# -----------------------------------------------------------------------------
-    @app_commands.command(
-        name="history",
-        description="View a member's moderation history."
-    )
-    @app_commands.default_permissions(
-        moderate_members=True,
-    )
-    async def history(
-        self,
-        interaction: discord.Interaction,
-        member: discord.Member,
-    ):
-
-        cases = await self.service.history(
-            guild_id=interaction.guild.id,
-            target_id=member.id,
-        )
-
-        if not cases:
-
-            await interaction.response.send_message(
-                "No moderation history.",
-                ephemeral=True,
-            )
-            return
-
-        embed = discord.Embed(
-            title=f"{member} Moderation History",
-            color=discord.Color.orange(),
-        )
-
-        for case in cases[:10]:
-
-            embed.add_field(
-                name=f"Case #{case['case_number']} • {case['action'].upper()}",
-                value=case["reason"] or "No reason provided.",
-                inline=False,
-            )
-
-        await interaction.response.send_message(
-            embed=embed,
-            ephemeral=True,
-        )
-
-# -----------------------------------------------------------------------------
-# &&Method unban
-#   Unban a member and records it
-# -----------------------------------------------------------------------------
-    @app_commands.command(
-        name="unban",
-        description="Unban a user."
-    )
-    @app_commands.default_permissions(
-        ban_members=True,
-    )
-    async def unban(
-        self,
-        interaction: discord.Interaction,
-        user: discord.User,
-        reason: str | None = None,
-    ):
-
-        await interaction.guild.unban(
-            user,
-            reason=reason,
-        )
-
-        case = await self.service.unban(
-            guild_id=interaction.guild.id,
-            moderator_id=interaction.user.id,
-            target_id=user.id,
-            reason=reason,
-        )
-        
-        await self.service.create_message(
-            case,
-            ModerationAction.WARN,
-            interaction,
-            user=user,
             reason=reason
         )
 
@@ -313,19 +174,16 @@ class ModerationCog(commands.Cog):
         member: discord.Member,
         reason: str | None = None,
     ):
-
         await member.timeout(
             None,
             reason=reason,
         )
-
         case = await self.service.untimeout(
             guild_id=interaction.guild.id,
             moderator_id=interaction.user.id,
             target_id=member.id,
             reason=reason,
         )
-        
         await self.service.create_message(
             case,
             ModerationAction.UNTIMEOUT,
@@ -333,58 +191,129 @@ class ModerationCog(commands.Cog):
             member=member,
             reason=reason
         )
+
 # -----------------------------------------------------------------------------
-# &&Method purge
-#   Purge latest the message/s of a member and records it
+# &&Method ban
+#   Ban a member and record it
 # -----------------------------------------------------------------------------
     @app_commands.command(
-        name="purge",
-        description="Delete messages."
+        name="ban",
+        description="Ban a member."
     )
     @app_commands.default_permissions(
-        manage_messages=True,
+        ban_members=True,
     )
-    async def purge(
+    async def ban(
         self,
         interaction: discord.Interaction,
-        amount: app_commands.Range[int, 1, 100],
+        member: discord.Member,
+        reason: str | None = None,
+        delete_message_days: app_commands.Range[int, 0, 7] = 0,
     ):
-
-        await interaction.response.defer(
-            ephemeral=True,
+        await member.ban(
+            reason=reason,
+            delete_message_days=delete_message_days,
         )
-
-        deleted = await interaction.channel.purge(
-            limit=amount,
+        case = await self.service.ban(
+            guild_id=interaction.guild.id,
+            target_id=member.id,
+            moderator_id=interaction.user.id,
+            reason=reason,
         )
-
-        await interaction.followup.send(
-            f"Deleted {len(deleted)} messages.",
-            ephemeral=True,
+        await self.service.create_message(
+            case,
+            ModerationAction.BAN,
+            interaction,
+            member=member,
+            reason=reason
         )
 
 # -----------------------------------------------------------------------------
-# &&Method clearwarnings
-#   Clear any warnings given to the member
+# &&Method unban
+#   Unban a member and records it
 # -----------------------------------------------------------------------------
     @app_commands.command(
-        name="clearwarnings",
-        description="Clear all warnings."
+        name="unban",
+        description="Unban a user."
+    )
+    @app_commands.default_permissions(
+        ban_members=True,
+    )
+    async def unban(
+        self,
+        interaction: discord.Interaction,
+        user: discord.User,
+        reason: str | None = None,
+    ):
+        await interaction.guild.unban(
+            user,
+            reason=reason,
+        )
+        case = await self.service.unban(
+            guild_id=interaction.guild.id,
+            moderator_id=interaction.user.id,
+            target_id=user.id,
+            reason=reason,
+        )
+        await self.service.create_message(
+            case,
+            ModerationAction.WARN,
+            interaction,
+            user=user,
+            reason=reason
+        )
+
+# -----------------------------------------------------------------------------
+# &&Method note
+#   Adds a note to a member and record it
+# -----------------------------------------------------------------------------
+    @app_commands.command(
+        name="note",
+        description="Add a moderation note."
     )
     @app_commands.default_permissions(
         moderate_members=True,
     )
-    async def clearwarnings(
+    async def note(
         self,
         interaction: discord.Interaction,
         member: discord.Member,
+        note: str,
     ):
+        case = await self.service.note(
+            guild_id=interaction.guild.id,
+            target_id=member.id,
+            moderator_id=interaction.user.id,
+            note=note,
+        )
+        await self.service.create_message(
+            case,
+            ModerationAction.NOTE,
+            interaction,
+            member=member,
+            note=note
+        )
 
-        count = await self.service.clear_warnings(
+# -----------------------------------------------------------------------------
+# &&Method clearactions
+#   Clear any warnings given to the member
+# -----------------------------------------------------------------------------
+    @app_commands.command(
+        name="clearaction",
+        description="Clear all specific actions."
+    )
+    @commands.is_owner()
+    async def clearactions(
+        self,
+        interaction: discord.Interaction,
+        member: discord.Member,
+        action: ModerationAction
+    ):
+        count = await self.service.clear_action(
             interaction.guild.id,
             member.id,
+            action
         )
-        
         await (
             EphemeralMessage(
                 title=f"Cleared {count} warnings of {member.display_name}",
@@ -407,56 +336,79 @@ class ModerationCog(commands.Cog):
     async def case(
         self,
         interaction: discord.Interaction,
-        case_number: int,
+        case_number: int
     ):
-
         case = await self.service.case(
             interaction.guild.id,
             case_number,
         )
-
+        
+        message=EphemeralMessage(
+                    title=f"Case #{case_number} not found.",
+                    color=Color.red()
+                )
         if case is None:
-
-            await interaction.response.send_message(
-                "Case not found.",
-                ephemeral=True,
-            )
-
+            await message.send(interaction)
             return
-
+        
         embed = discord.Embed(
             title=f"Case #{case['case_number']}",
             color=discord.Color.blurple(),
         )
+        fields = [
+            ("Action", case["action"], True),
+            ("Target", f"<@{case['target_id']}>", True),
+            ("Moderator", f"<@{case['moderator_id']}>", True),
+            ("Status", "Active" if case["active"] else "Closed", False),
+            ("Reason", case["reason"] or "No reason provided.", False),
+        ]
+        for name, value, inline in fields:
+            embed.add_field(name=name, value=value, inline=inline)
+        message.embed = embed
+        await message.send(interaction)
 
-        embed.add_field(
-            name="Action",
-            value=case["action"],
+# -----------------------------------------------------------------------------
+# &&Method history
+#   Checks the moderation history of a member
+# -----------------------------------------------------------------------------
+    @app_commands.command(
+        name="history",
+        description="View a member's moderation history."
+    )
+    @app_commands.default_permissions(
+        moderate_members=True,
+    )
+    async def history(
+        self,
+        interaction: discord.Interaction,
+        member: discord.Member,
+        action: ModerationAction | None = None,
+        active: Literal["True", "False", "All"] = "True"
+    ):
+        cases = await self.service.history(
+            guild_id=interaction.guild.id,
+            target_id=member.id,
+            action=action,
+            active=active
         )
-
-        embed.add_field(
-            name="Target",
-            value=f"<@{case['target_id']}>",
+        
+        message=EphemeralMessage(
+                title="No moderation history.",
+                color=Color.red()
+                )
+        if cases is None:
+            await message.send(interaction)
+            return
+        
+        embed = discord.Embed(
+            title=f"{member} Moderation History",
+            color=discord.Color.orange(),
         )
-
-        embed.add_field(
-            name="Moderator",
-            value=f"<@{case['moderator_id']}>",
-        )
-
-        embed.add_field(
-            name="Status",
-            value="Active" if case["active"] else "Closed",
-            inline=False,
-        )
-
-        embed.add_field(
-            name="Reason",
-            value=case["reason"] or "No reason provided.",
-            inline=False,
-        )
-
-        await interaction.response.send_message(
-            embed=embed,
-            ephemeral=True,
-        )
+        for case in cases[:10]:
+            embed.add_field(
+                name=f"Case #{case['case_number']} • {case['action'].upper()}",
+                value=case["reason"] or "No reason provided.",
+                inline=False,
+            )
+        message.embed = embed
+        await message.send(interaction)

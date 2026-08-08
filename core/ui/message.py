@@ -35,12 +35,10 @@ class Message:
 
 
 class EphemeralMessage(Message):
-
     async def send(
         self,
         interaction: discord.Interaction,
     ) -> None:
-
         await interaction.response.send_message(
             embed=self.embed,
             ephemeral=True,
@@ -50,7 +48,6 @@ class EphemeralMessage(Message):
         self,
         interaction: discord.Interaction,
     ) -> None:
-
         await interaction.followup.send(
             embed=self.embed,
             ephemeral=True,
@@ -58,7 +55,6 @@ class EphemeralMessage(Message):
 
 
 class PublicMessage(Message):
-
     async def send(
         self,
         interaction: discord.Interaction,

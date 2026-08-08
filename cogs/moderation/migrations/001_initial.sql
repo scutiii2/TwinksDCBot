@@ -1,21 +1,12 @@
 CREATE TABLE IF NOT EXISTS cases(
-
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-
     case_number INTEGER NOT NULL,
-
     target_id INTEGER NOT NULL,
-
     moderator_id INTEGER NOT NULL,
-
     action TEXT NOT NULL,
-
     reason TEXT,
-
     created_at INTEGER NOT NULL,
-
     expires_at INTEGER,
-
     active INTEGER NOT NULL DEFAULT 1
 );
 

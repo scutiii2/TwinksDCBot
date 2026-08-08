@@ -1,7 +1,6 @@
 from enum import StrEnum
 from discord import Color
 
-
 class ModerationAction(StrEnum):
     WARN = "warn"
     TIMEOUT = "timeout"
@@ -21,7 +20,6 @@ class ModerationActionIcon(StrEnum):
     SOFTBAN = "🪓"
     NOTE = "📝"
     UNTIMEOUT = "📢"
-    
 
 ModerationActionColor = {
     "WARN": Color.orange(),
