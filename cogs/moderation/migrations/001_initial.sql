@@ -21,36 +21,3 @@ ON cases(target_id);
 
 CREATE INDEX IF NOT EXISTS idx_cases_action
 ON cases(action);
-
--- -----------------------------------------------------------------------------
--- Role option messages
--- -----------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS role_options(
-    message_id INTEGER PRIMARY KEY,
-    channel_id INTEGER NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS role_option_roles(
-    message_id INTEGER NOT NULL,
-    role_id INTEGER NOT NULL,
-    emoji TEXT NOT NULL,
-
-    PRIMARY KEY(
-        message_id,
-        role_id
-    ),
-
-    UNIQUE(
-        message_id,
-        emoji
-    ),
-
-    FOREIGN KEY(
-        message_id
-    )
-    REFERENCES role_options(message_id)
-    ON DELETE CASCADE
-);
-
-CREATE INDEX IF NOT EXISTS idx_role_option_roles_emoji
-ON role_option_roles(message_id, emoji);
