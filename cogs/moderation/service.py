@@ -5,14 +5,11 @@
 '''
 
 from __future__ import annotations
-from discord import Interaction, Member, User
 from time import time
 from typing import Literal
-from core.guild import guild_setup
 from core.database import database
-from core.ui import PublicMessage, EphemeralMessage
-from .actions import ModerationAction as ModAction, ModerationActionIcon as ModIcon, ModerationActionColor as ModColor
-from .repository import ModerationRepository
+from .actions import ModerationAction
+from .repository import ModerationRepository as Repository
 
 '''
 ===============================================================================
@@ -23,63 +20,19 @@ from .repository import ModerationRepository
 '''
 class ModerationService:
 # -----------------------------------------------------------------------------
-# &&Method create_message
-#   Direct messenger to the guild after doing moderation commands
-# -----------------------------------------------------------------------------
-    async def create_message(
-        self,
-        case: int,
-        service_type: ModAction,
-        interaction: Interaction,
-        member: Member | None = None,
-        user: User | None = None,
-        reason: str | None = None,
-        note: str | None = None
-    ) -> PublicMessage:
-        channel = await guild_setup.moderation_channel(interaction.guild)
-        message = (PublicMessage(
-            title=f"[Case #{case}] {ModIcon[service_type.name]} {service_type.value.title()}",
-            color=ModColor[service_type.name],
-            )
-            .add_field(
-                title="Moderator",
-                value=interaction.user.mention,
-            )
-        )
-        
-        fields = [
-            ("Member", member.mention if member else None),
-            ("User", user),
-            ("Reason", reason),
-            ("Note", note),
-        ]
-        for title, value in fields:
-            if value:
-                message.add_field(title=title, value=value)
-
-        await message.channel(channel)
-        await (
-            EphemeralMessage(
-                title=f"{ModIcon[service_type.name]} {service_type.value.title()} to {member.display_name}",
-                color=ModColor[service_type.name],
-            )
-            .send(interaction)
-        )
-
-# -----------------------------------------------------------------------------
 # &&Method repository
 #   Connector the the repository instance of the guild
 # -----------------------------------------------------------------------------
     async def repository(
         self,
         guild_id: int,
-    ) -> ModerationRepository:
+    ) -> Repository:
         db = await database.guild_module(
             guild_id,
-            ModerationRepository.MODULE,
-            ModerationRepository.MIGRATIONS,
+            Repository.MODULE,
+            Repository.MIGRATIONS,
         )
-        return ModerationRepository(db)
+        return Repository(db)
 
 # -----------------------------------------------------------------------------
 # &&Method warn
@@ -96,7 +49,7 @@ class ModerationService:
         return await repo.create_case(
             target_id=target_id,
             moderator_id=moderator_id,
-            action=ModAction.WARN,
+            action=ModerationAction.WARN,
             reason=reason,
             created_at=int(time()),
         )
@@ -116,7 +69,7 @@ class ModerationService:
         return await repo.create_case(
             target_id=target_id,
             moderator_id=moderator_id,
-            action=ModAction.KICK,
+            action=ModerationAction.KICK,
             reason=reason,
             created_at=int(time()),
         )
@@ -138,7 +91,7 @@ class ModerationService:
         return await repo.create_case(
             target_id=target_id,
             moderator_id=moderator_id,
-            action=ModAction.TIMEOUT,
+            action=ModerationAction.TIMEOUT,
             reason=reason,
             created_at=now,
             expires_at=now + duration,
@@ -159,7 +112,7 @@ class ModerationService:
         return await repo.create_case(
             target_id=target_id,
             moderator_id=moderator_id,
-            action=ModAction.UNTIMEOUT,
+            action=ModerationAction.UNTIMEOUT,
             reason=reason,
             created_at=int(time()),
         )
@@ -179,7 +132,7 @@ class ModerationService:
         return await repo.create_case(
             target_id=target_id,
             moderator_id=moderator_id,
-            action=ModAction.BAN,
+            action=ModerationAction.BAN,
             reason=reason,
             created_at=int(time()),
         )
@@ -199,7 +152,7 @@ class ModerationService:
         return await repo.create_case(
             target_id=target_id,
             moderator_id=moderator_id,
-            action=ModAction.UNBAN,
+            action=ModerationAction.UNBAN,
             reason=reason,
             created_at=int(time()),
         )
@@ -219,7 +172,7 @@ class ModerationService:
         return await repo.create_case(
             target_id=target_id,
             moderator_id=moderator_id,
-            action=ModAction.NOTE,
+            action=ModerationAction.NOTE,
             reason=note,
             created_at=int(time()),
         )
@@ -232,7 +185,7 @@ class ModerationService:
         self,
         guild_id: int,
         target_id: int,
-        action: ModAction
+        action: ModerationAction
     ) -> int:
         repo = await self.repository(guild_id)
         return await repo.clear_action(
@@ -260,7 +213,7 @@ class ModerationService:
         self,
         guild_id: int,
         target_id: int,
-        action: ModAction | None = None,
+        action: ModerationAction | None = None,
         active: Literal["True", "False", "All"] = "True"
     ):
         repo = await self.repository(guild_id)

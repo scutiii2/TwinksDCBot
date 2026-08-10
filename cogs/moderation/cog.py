@@ -10,10 +10,10 @@ from discord import app_commands, Color
 from discord.ext import commands
 from datetime import timedelta
 from typing import Literal
-import re
 from core.ui.message import EphemeralMessage
 from .service import ModerationService
 from .actions import ModerationAction
+from .util import create_message
 
 '''
 ===============================================================================
@@ -80,7 +80,7 @@ class ModerationCog(commands.Cog):
             moderator_id=interaction.user.id,
             reason=reason,
         )
-        await self.service.create_message(
+        await create_message(
             case,
             ModerationAction.WARN,
             interaction,
@@ -112,7 +112,7 @@ class ModerationCog(commands.Cog):
             moderator_id=interaction.user.id,
             reason=reason,
         )
-        await self.service.create_message(
+        await create_message(
             case,
             ModerationAction.KICK,
             interaction,
@@ -150,7 +150,7 @@ class ModerationCog(commands.Cog):
             duration=int(duration.total_seconds()),
             reason=reason,
         )
-        await self.service.create_message(
+        await create_message(
             case,
             ModerationAction.TIMEOUT,
             interaction,
@@ -185,7 +185,7 @@ class ModerationCog(commands.Cog):
             target_id=member.id,
             reason=reason,
         )
-        await self.service.create_message(
+        await create_message(
             case,
             ModerationAction.UNTIMEOUT,
             interaction,
@@ -221,7 +221,7 @@ class ModerationCog(commands.Cog):
             moderator_id=interaction.user.id,
             reason=reason,
         )
-        await self.service.create_message(
+        await create_message(
             case,
             ModerationAction.BAN,
             interaction,
@@ -256,7 +256,7 @@ class ModerationCog(commands.Cog):
             target_id=user.id,
             reason=reason,
         )
-        await self.service.create_message(
+        await create_message(
             case,
             ModerationAction.WARN,
             interaction,
@@ -287,7 +287,7 @@ class ModerationCog(commands.Cog):
             moderator_id=interaction.user.id,
             note=note,
         )
-        await self.service.create_message(
+        await create_message(
             case,
             ModerationAction.NOTE,
             interaction,
