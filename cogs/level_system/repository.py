@@ -154,4 +154,4 @@ class LevelSystemRepository:
             ORDER BY xp DESC
             LIMIT ?
         """
-        return await self.db.fetchall(query, (limit))
+        return await self.db.fetchall(query, (limit,))

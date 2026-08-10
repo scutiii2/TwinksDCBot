@@ -51,14 +51,7 @@ class Twinks(commands.Bot):
 
         if Config.DEV_GUILD_ID:
             guild = discord.Object(id=Config.DEV_GUILD_ID)
-
-            # One-time cleanup: wipe any previously-synced GLOBAL commands
-            # from this guild so they stop showing up alongside the
-            # guild-scoped copies. Safe to leave in — clearing global
-            # commands for a guild is a no-op once none remain.
-            self.tree.clear_commands(guild=None)
-            await self.tree.sync(guild=guild)
-
+            
             self.tree.copy_global_to(guild=guild)
             synced = await self.tree.sync(guild=guild)
             self.logger.info("Synced %d application commands to dev guild.", len(synced))
