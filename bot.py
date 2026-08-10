@@ -25,12 +25,6 @@ class Twinks(commands.Bot):
         self.logger.info("Moderation extension loaded.")
         self.logger.info("Syncing application commands...")
         synced = await self.tree.sync()
-        for command in synced:
-            self.logger.info(
-                "Command: %s | ID: %s",
-                command.name,
-                command.id,
-            )
         self.logger.info("Synced %d application commands.", len(synced))
         for guild in self.guilds:
             await guild_setup.ensure(guild)
