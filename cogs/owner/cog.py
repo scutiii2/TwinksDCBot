@@ -62,6 +62,26 @@ class OwnerCog(commands.Cog):
             view=view,
             ephemeral=True,
         )
+        
+# -----------------------------------------------------------------------------
+# &&Method restarttwinks
+#   Restarts the bot process to pick up code changes (owner only)
+# -----------------------------------------------------------------------------
+    @app_commands.command(
+        name="restarttwinks",
+        description="Restart the bot. (Owner only)"
+    )
+    @is_bot_owner()
+    async def restarttwinks(
+        self,
+        interaction: discord.Interaction,
+    ):
+        view = _ConfirmRestart(self.bot)
+        await interaction.response.send_message(
+            "🔄 This will restart the bot for **all** servers. Are you sure?",
+            view=view,
+            ephemeral=True,
+        )
 
 # -----------------------------------------------------------------------------
 # &&Method servers
@@ -173,6 +193,44 @@ class _ConfirmShutdown(discord.ui.View):
         for child in self.children:
             child.disabled = True
         await interaction.response.edit_message(content="Shutdown cancelled.", view=self)
+
+    async def on_timeout(self) -> None:
+        for child in self.children:
+            child.disabled = True
+            
+'''
+===============================================================================
+# &&Class _ConfirmRestart
+#   Ephemeral confirm/cancel view guarding the restart command
+===============================================================================
+'''
+import os
+import sys
+import asyncio
+import logging
+class _ConfirmRestart(discord.ui.View):
+    def __init__(self, bot: commands.Bot):
+        super().__init__(timeout=30)
+        self.bot = bot
+        self.logger = logging.getLogger("Twinks")
+
+    @discord.ui.button(label="Restart", style=discord.ButtonStyle.danger)
+    async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
+        for child in self.children:
+            child.disabled = True
+        await interaction.response.edit_message(content="🔴 Restarting...", view=self)
+
+        from core.process_lock import release
+        release()
+
+        await self.bot.close()
+        os.execv(sys.executable, [sys.executable] + sys.argv)
+
+    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.secondary)
+    async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
+        for child in self.children:
+            child.disabled = True
+        await interaction.response.edit_message(content="Restart cancelled.", view=self)
 
     async def on_timeout(self) -> None:
         for child in self.children:
