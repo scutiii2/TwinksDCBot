@@ -10,7 +10,8 @@ from discord import app_commands, Color
 from discord.ext import commands
 from datetime import timedelta
 from typing import Literal
-from core.ui.message import EphemeralMessage
+from core.ui import EphemeralMessage
+from core.guild import prefix_service
 from .service import ModerationService
 from .actions import ModerationAction
 from .util import create_message
@@ -29,6 +30,28 @@ class ModerationCog(commands.Cog):
     ):
         self.bot = bot
         self.service = ModerationService()
+
+# -----------------------------------------------------------------------------
+# &&Method setprefix
+#   Change the command prefix for this server
+# -----------------------------------------------------------------------------
+    @app_commands.command(
+        name="setprefix",
+        description="Change the bot's command prefix for this server."
+    )
+    @app_commands.default_permissions(
+        administrator=True,
+    )
+    async def setprefix(
+        self,
+        interaction: discord.Interaction,
+        new_prefix: app_commands.Range[str, 1, 5],
+    ):
+        await prefix_service.set(interaction.guild.id, new_prefix)
+        await EphemeralMessage(
+            title=f"✅ Prefix updated to `{new_prefix}`",
+            color=discord.Color.green(),
+        ).send(interaction)
 
 # -----------------------------------------------------------------------------
 # &&Method purge

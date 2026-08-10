@@ -5,7 +5,7 @@
 '''
 
 from __future__ import annotations
-from core.database import database
+from core.database import databaseManager
 from .repository import LevelSystemRepository as Repository
 from .leveling import level_from_xp
 
@@ -13,7 +13,7 @@ from .leveling import level_from_xp
 ===============================================================================
 # &&Class LevelSystemService
 #   Provides utilities for Level System Cog (and other cogs, e.g. game_manager)
-#   Middle man of the cog (talks to UI) and repository (talks to database)
+#   Middle man of the cog (talks to UI) and repository (talks to databaseManager)
 ===============================================================================
 '''
 class LevelSystemService:
@@ -25,7 +25,7 @@ class LevelSystemService:
         self,
         guild_id: int,
     ) -> Repository:
-        db = await database.guild_module(
+        db = await databaseManager.guild_module(
             guild_id,
             Repository.MODULE,
             Repository.MIGRATIONS,

@@ -19,11 +19,10 @@ class DatabaseManager:
 
     async def global_database(
         self,
+        migrations: Path | None = None,
     ) -> Database:
-
         path = self._storage / "global.db"
-
-        return await self._open(path)
+        return await self._open(path, migrations)
 
     async def user_database(
         self,

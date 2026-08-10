@@ -7,7 +7,7 @@
 from __future__ import annotations
 from time import time
 from typing import Literal
-from core.database import database
+from core.database import databaseManager
 from .actions import ModerationAction
 from .repository import ModerationRepository as Repository
 
@@ -15,7 +15,7 @@ from .repository import ModerationRepository as Repository
 ===============================================================================
 # &&Class ModerationService
 #   Provides utilities for Moderation Cog
-#   Middle man of the cog (talks to UI) and repository (talks to database)
+#   Middle man of the cog (talks to UI) and repository (talks to databaseManager)
 ===============================================================================
 '''
 class ModerationService:
@@ -27,7 +27,7 @@ class ModerationService:
         self,
         guild_id: int,
     ) -> Repository:
-        db = await database.guild_module(
+        db = await databaseManager.guild_module(
             guild_id,
             Repository.MODULE,
             Repository.MIGRATIONS,

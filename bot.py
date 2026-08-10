@@ -5,9 +5,16 @@ from discord.ext import commands
 from config import Config
 import logging
 from core.logging import setup_logging
-from core.guild import guild_setup
-from core.ui.message import PublicMessage
+from core.guild import guild_setup, prefix_service
+from core.ui import PublicMessage
 from cogs import COGS
+
+
+async def get_prefix(bot: commands.Bot, message: discord.Message):
+    if message.guild is None:
+        return commands.when_mentioned_or("!")(bot, message)
+    prefix = await prefix_service.get(message.guild.id)
+    return commands.when_mentioned_or(prefix)(bot, message)
 
 class Twinks(commands.Bot):
     _cogs = {
@@ -22,7 +29,7 @@ class Twinks(commands.Bot):
         intents.members = True
         intents.message_content = True
         super().__init__(
-            command_prefix="!",
+            command_prefix=get_prefix,
             intents=intents,
         )
 
@@ -56,8 +63,8 @@ class Twinks(commands.Bot):
             
 
     async def close(self):
-        from core.database import database
-        await database.close()
+        from core.database import databaseManager
+        await databaseManager.close()
         await super().close()
         
     async def on_ready(self):

@@ -1,8 +1,8 @@
 from .manager import DatabaseManager
 
-database = DatabaseManager()
+databaseManager = DatabaseManager()
 
 __all__ = (
-    "database",
+    "databaseManager",
     "DatabaseManager",
 )
