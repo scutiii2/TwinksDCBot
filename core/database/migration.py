@@ -1,9 +1,6 @@
 from __future__ import annotations
-
 from pathlib import Path
-
 from .database import Database
-
 
 class MigrationManager:
     """Applies SQL migrations to a database."""

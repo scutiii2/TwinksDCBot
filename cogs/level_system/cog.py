@@ -8,8 +8,9 @@ from __future__ import annotations
 import discord
 from discord import app_commands, Member
 from discord.ext import commands
+from core.ui import EphemeralMessage, safe_defer
+from core.discord import user_info
 from .service import LevelSystemService
-from core.ui.message import EphemeralMessage
 from .checks import registered_only
 from .leveling import xp_progress
 
@@ -113,6 +114,8 @@ class LevelSystemCog(commands.Cog):
         overall: bool = False,
         show_to_everyone: bool = False,
     ):
+        await safe_defer(interaction, ephemeral = not show_to_everyone)
+
         top_users = await self.service.get_top_users(
             interaction.guild.id,
             overall=overall,
@@ -126,12 +129,15 @@ class LevelSystemCog(commands.Cog):
         if not top_users:
             embed.description = "No one has earned XP yet."
         else:
-            embed.description = "\n".join(
-                f"**#{i}** <@{row['user_id']}> — Level {row['level']} ({row['xp']} XP)"
-                for i, row in enumerate(top_users, start=1)
-            )
+            lines = []
+            for i, row in enumerate(top_users, start=1):
+                name = await user_info.get_guild_display_name(
+                    self.bot, interaction.guild, row["user_id"]
+                )
+                lines.append(f"**#{i}** {name} — Level {row['level']} ({row['xp']} XP)")
+            embed.description = "\n".join(lines)
 
-        await interaction.response.send_message(
+        await interaction.followup.send(
             embed=embed,
             ephemeral=not show_to_everyone,
         )

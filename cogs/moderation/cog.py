@@ -5,11 +5,11 @@
 '''
 
 from __future__ import annotations
+from datetime import timedelta
+from typing import Literal
 import discord
 from discord import app_commands, Color
 from discord.ext import commands
-from datetime import timedelta
-from typing import Literal
 from core.ui import EphemeralMessage
 from core.guild import prefix_service
 from .service import ModerationService
@@ -281,7 +281,7 @@ class ModerationCog(commands.Cog):
         )
         await create_message(
             case,
-            ModerationAction.WARN,
+            ModerationAction.UNBAN,
             interaction,
             user=user,
             reason=reason

@@ -7,7 +7,7 @@
 from __future__ import annotations
 from pathlib import Path
 from typing import Literal
-from core.database.database import Database
+from core.database import Database
 from .actions import ModerationAction
 
 '''

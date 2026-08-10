@@ -1,13 +1,14 @@
 from __future__ import annotations
 import asyncio
+import logging
 import discord
 from discord.ext import commands
-from config import Config
-import logging
+from core.process_lock import acquire, release
 from core.logging import setup_logging
 from core.guild import guild_setup, prefix_service
 from core.ui import PublicMessage
 from cogs import COGS
+from config import Config
 
 
 async def get_prefix(bot: commands.Bot, message: discord.Message):
@@ -17,12 +18,6 @@ async def get_prefix(bot: commands.Bot, message: discord.Message):
     return commands.when_mentioned_or(prefix)(bot, message)
 
 class Twinks(commands.Bot):
-    _cogs = {
-        "moderation": True,
-        "level_system": True,
-        "game_manager": False
-    }
-    
     def __init__(self):
         self.logger = logging.getLogger("Twinks")
         intents = discord.Intents.default()
@@ -53,10 +48,24 @@ class Twinks(commands.Bot):
             if isinstance(error, discord.app_commands.CheckFailure):
                 return  # already handled inside the check itself
             self.logger.exception("Unhandled app command error", exc_info=error)
-        
-        self.logger.info("Syncing application commands...")
-        synced = await self.tree.sync()
-        self.logger.info("Synced %d application commands.", len(synced))
+
+        if Config.DEV_GUILD_ID:
+            guild = discord.Object(id=Config.DEV_GUILD_ID)
+
+            # One-time cleanup: wipe any previously-synced GLOBAL commands
+            # from this guild so they stop showing up alongside the
+            # guild-scoped copies. Safe to leave in — clearing global
+            # commands for a guild is a no-op once none remain.
+            self.tree.clear_commands(guild=None)
+            await self.tree.sync(guild=guild)
+
+            self.tree.copy_global_to(guild=guild)
+            synced = await self.tree.sync(guild=guild)
+            self.logger.info("Synced %d application commands to dev guild.", len(synced))
+        else:
+            self.logger.info("Syncing application commands globally...")
+            synced = await self.tree.sync()
+            self.logger.info("Synced %d application commands.", len(synced))
         
         for guild in self.guilds:
             await guild_setup.ensure(guild)
@@ -93,10 +102,15 @@ class Twinks(commands.Bot):
 
 
 async def main():
+    acquire()
     setup_logging(Config.LOG_PATH)
     bot = Twinks()
-    async with bot:
-        await bot.start(Config.BOT_TOKEN)
+    try:
+        async with bot:
+            await bot.start(Config.BOT_TOKEN)
+    finally:
+        release()
+
 
 
 if __name__ == "__main__":

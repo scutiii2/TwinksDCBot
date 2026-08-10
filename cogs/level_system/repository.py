@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 from pathlib import Path
-from core.database.database import Database
+from core.database import Database
 
 '''
 ===============================================================================

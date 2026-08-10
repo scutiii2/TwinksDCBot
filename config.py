@@ -7,4 +7,5 @@ class Config:
     BOT_TOKEN = os.getenv("BOT_TOKEN")
     STORAGE_PATH = Path("storage")
     LOG_PATH = Path("logs")
-    DEBUG = True
+    DEBUG = False
+    DEV_GUILD_ID = os.getenv("DEV_GUILD_ID")
