@@ -2,12 +2,12 @@ __pycache__/
 *.pyc
 *.pyo
 
-storage/
-logs/
-
 .vscode/
 .idea/
 
 .venv/
 venv/
 .env
+
+storage/
+logs/
