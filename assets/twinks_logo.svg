@@ -1,0 +1,55 @@
+<svg viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .accent { fill: #F4E9D7; }
+    </style>
+  </defs>
+
+  <!-- Plain flat background, now the accent color -->
+  <circle cx="300" cy="300" r="270" fill="#4752C4"/>
+
+  <!-- Single clean ring border, one color -->
+  <circle cx="300" cy="300" r="270" fill="none" stroke="#F4E9D7" stroke-width="10"/>
+
+  <!-- Icon: game-controller silhouette merged with a stylized T, single flat color -->
+  <g class="accent">
+    <path d="
+      M 195 215
+      Q 195 178 232 178
+      L 368 178
+      Q 405 178 405 215
+      L 405 255
+      Q 445 265 452 315
+      Q 460 375 430 405
+      Q 405 430 378 405
+      L 348 372
+      Q 330 358 300 358
+      Q 270 358 252 372
+      L 222 405
+      Q 195 430 170 405
+      Q 140 375 148 315
+      Q 155 265 195 255
+      Z"/>
+
+    <!-- D-pad and buttons cut out in background color for retro flat look -->
+    <rect x="205" y="270" width="52" height="16" rx="6" fill="#4752C4"/>
+    <rect x="223" y="252" width="16" height="52" rx="6" fill="#4752C4"/>
+    <circle cx="345" cy="262" r="12" fill="#4752C4"/>
+    <circle cx="375" cy="292" r="12" fill="#4752C4"/>
+
+    <!-- T stem, cut through the controller body in background color -->
+    <rect x="284" y="196" width="32" height="150" rx="10" fill="#4752C4"/>
+    <rect x="248" y="196" width="104" height="30" rx="10" fill="#4752C4"/>
+  </g>
+
+  <!-- Brand name: straight horizontal, bold retro cursive, plain single color, no outline -->
+  <text x="300" y="470"
+        text-anchor="middle"
+        font-family="'Brush Script MT', 'Segoe Script', 'Lucida Handwriting', cursive"
+        font-size="86"
+        font-weight="700"
+        font-style="italic"
+        fill="#F4E9D7"
+        letter-spacing="1">Twinks</text>
+
+</svg>
