@@ -66,7 +66,9 @@ class Twinks(commands.Bot):
 
     async def close(self):
         from core.database import databaseManager
+        from core.crafty import crafty_client
         await databaseManager.close()
+        await crafty_client.close()
         await super().close()
         
     async def on_ready(self):
