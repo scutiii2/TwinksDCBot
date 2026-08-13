@@ -41,10 +41,11 @@ class MinecraftCog(commands.Cog):
         self,
         interaction: discord.Interaction,
     ):
-        await safe_defer(interaction)
+        await safe_defer(interaction, ephemeral=True)
 
         try:
             status = await self.service.get_status()
+            print(status)
         except CraftyError as exc:
             await EphemeralMessage(
                 title="⚠️ Could not reach the server.",

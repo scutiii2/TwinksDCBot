@@ -71,13 +71,18 @@ class LevelSystemCog(commands.Cog):
         member: Member | None = None,
         show_to_everyone: bool = False,
     ):
+        # registered_only() already deferred this interaction before this
+        # body ever runs - safe_defer() here is a harmless no-op guard in
+        # case that ever changes, not redundant work.
+        await safe_defer(interaction, ephemeral=not show_to_everyone)
+
         member = member or interaction.user
         user = await self.service.get_user(member.id, interaction.guild.id)
         if user is None:
             await EphemeralMessage(
                 title=f"{member.display_name} hasn't registered yet.",
                 color=discord.Color.red(),
-            ).send(interaction)
+            ).followup(interaction)
             return
 
         level, into_level, needed = xp_progress(user["xp"])
@@ -94,11 +99,11 @@ class LevelSystemCog(commands.Cog):
             inline=False,
         )
 
-        await interaction.response.send_message(
+        await interaction.followup.send(
             embed=embed,
             ephemeral=not show_to_everyone,
         )
-        
+
 # -----------------------------------------------------------------------------
 # &&Method leaderboard
 #   Shows the top members by XP

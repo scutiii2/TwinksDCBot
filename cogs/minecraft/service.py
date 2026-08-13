@@ -7,6 +7,7 @@
 from __future__ import annotations
 import json
 from core.crafty import crafty_client
+from core.numbers import bytes_to_human_readable
 
 '''
 ===============================================================================
@@ -21,23 +22,25 @@ class MinecraftService:
 # -----------------------------------------------------------------------------
     async def get_status(self) -> dict:
         stats = await crafty_client.stats()
-
-        players = stats.get("players") or []
+        data = stats.get("data")
+        # info = data.get("server_id")
+            
+        players = data.get("players") or []
         if isinstance(players, str):
             try:
                 players = json.loads(players)
             except (json.JSONDecodeError, TypeError):
                 players = []
-
+        
         return {
-            "running": bool(stats.get("running")),
-            "online": stats.get("online") or 0,
-            "max": stats.get("max") or 0,
+            "running": data.get("running"),
+            "online": data.get("online") or 0,
+            "max": data.get("max") or 0,
             "players": players,
-            "version": stats.get("version") or "Unknown",
-            "cpu": stats.get("cpu"),
-            "mem": stats.get("mem"),
-            "world_name": stats.get("world_name"),
+            "version": data.get("version") or "Unknown",
+            "cpu": data.get("cpu"),
+            "mem": bytes_to_human_readable(data.get("mem")),
+            "world_name": data.get("world_name"),
         }
 
 # -----------------------------------------------------------------------------

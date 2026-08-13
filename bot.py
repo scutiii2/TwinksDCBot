@@ -67,22 +67,24 @@ class Twinks(commands.Bot):
     async def close(self):
         from core.database import databaseManager
         from core.crafty import crafty_client
+        from core.ollama import ollama_client
         await databaseManager.close()
         await crafty_client.close()
+        await ollama_client.close()
         await super().close()
         
     async def on_ready(self):
-        for guild in self.guilds:
-            channel = await guild_setup.logs_channel(guild)
-            await (
-                PublicMessage(
-                    title="🟢 Twinks Online",
-                    color=discord.Color.green(),
-                )
-                .add_field(title="Guild", value=guild.name)
-                .add_field(title="Latency", value=f"{round(self.latency * 1000)} ms")
-                .channel(channel)
-            )
+        # for guild in self.guilds:
+        #     channel = await guild_setup.logs_channel(guild)
+        #     await (
+        #         PublicMessage(
+        #             title="🟢 Twinks Online",
+        #             color=discord.Color.green(),
+        #         )
+        #         .add_field(title="Guild", value=guild.name)
+        #         .add_field(title="Latency", value=f"{round(self.latency * 1000)} ms")
+        #         .channel(channel)
+        #     )
         
         self.logger.info("----------------------------------------")
         self.logger.info("Twinks is now online!")

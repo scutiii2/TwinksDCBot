@@ -2,14 +2,14 @@ from __future__ import annotations
 import discord
 from discord import app_commands
 from core.ui import EphemeralMessage, safe_defer
-from .service import LevelSystemService
+from .service import ChatbotService
 
-_service = LevelSystemService()
+_service = ChatbotService()
 
-def registered_only():
-    """Require the invoking member to be registered in the level system.
+def allowed_guild_only():
+    """Require the invoking guild to be whitelisted for the chatbot.
 
-    Defers FIRST, before the registration DB lookup. Checks run before the
+    Defers FIRST, before the whitelist DB lookup. Checks run before the
     command body, so if we wait to defer inside the command itself, this
     check's own I/O eats into Discord's 3-second ack window and can expire
     the interaction before the command ever gets a chance to defer -
@@ -18,12 +18,12 @@ def registered_only():
     async def predicate(interaction: discord.Interaction) -> bool:
         await safe_defer(interaction)
 
-        if await _service.is_registered(interaction.user.id, interaction.guild.id):
+        if await _service.is_allowed(interaction.guild.id):
             return True
 
         await EphemeralMessage(
-            title="📋 You're not registered yet.",
-            description="Use `/register` to start tracking your level and XP.",
+            title="🚫 This server isn't enabled for the chatbot.",
+            description="Ask the bot owner to enable it with `/addserver`.",
             color=discord.Color.orange(),
         ).followup(interaction)
         return False

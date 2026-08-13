@@ -3,5 +3,6 @@ COGS: dict[str, bool] = {
     "moderation": True,
     "level_system": True,
     "minecraft": True,
+    "chatbot": True,
     "game_manager": False,
 }
