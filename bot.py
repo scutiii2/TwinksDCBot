@@ -6,7 +6,6 @@ from discord.ext import commands
 from core.process_lock import acquire, release
 from core.logging import setup_logging
 from core.guild import guild_setup, prefix_service
-from core.ui import PublicMessage
 from cogs import COGS
 from config import Config
 
@@ -62,35 +61,31 @@ class Twinks(commands.Bot):
         
         for guild in self.guilds:
             await guild_setup.ensure(guild)
-            
+
+        if Config.MCP_ENABLED:
+            import mcp_server
+            await mcp_server.start()
 
     async def close(self):
         from core.database import databaseManager
         from core.crafty import crafty_client
         from core.ollama import ollama_client
+        if Config.MCP_ENABLED:
+            import mcp_server
+            await mcp_server.stop()
         await databaseManager.close()
         await crafty_client.close()
         await ollama_client.close()
         await super().close()
         
     async def on_ready(self):
-        # for guild in self.guilds:
-        #     channel = await guild_setup.logs_channel(guild)
-        #     await (
-        #         PublicMessage(
-        #             title="🟢 Twinks Online",
-        #             color=discord.Color.green(),
-        #         )
-        #         .add_field(title="Guild", value=guild.name)
-        #         .add_field(title="Latency", value=f"{round(self.latency * 1000)} ms")
-        #         .channel(channel)
-        #     )
-        
         self.logger.info("----------------------------------------")
         self.logger.info("Twinks is now online!")
         self.logger.info("Logged in as %s", self.user)
         self.logger.info("User ID: %s", self.user.id)
         self.logger.info("Guilds: %d", len(self.guilds))
+        if Config.MCP_ENABLED:
+            self.logger.info("MCP server: http://%s:%d/mcp", Config.MCP_HOST, Config.MCP_PORT)
         self.logger.info("----------------------------------------")
         
     async def on_guild_join(self, guild: discord.Guild):

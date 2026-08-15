@@ -11,3 +11,5 @@ logs/
 .venv/
 venv/
 .env
+
+.mcp.json

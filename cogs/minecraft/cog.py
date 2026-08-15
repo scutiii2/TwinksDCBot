@@ -45,7 +45,6 @@ class MinecraftCog(commands.Cog):
 
         try:
             status = await self.service.get_status()
-            print(status)
         except CraftyError as exc:
             await EphemeralMessage(
                 title="⚠️ Could not reach the server.",

@@ -24,3 +24,12 @@ class Config:
         "You are Twinks, a friendly Discord bot chatting in a Discord server. "
         "Keep responses short and conversational, suited for a chat message.",
     )
+
+    # --- MCP server ---
+    # Exposes a curated set of bot commands as MCP tools. Bound to 0.0.0.0 by
+    # default so other devices on the LAN can reach it (e.g. via this
+    # machine's local IP); it is NOT exposed to the internet unless the
+    # router is configured to port-forward MCP_PORT.
+    MCP_ENABLED = os.getenv("MCP_ENABLED", "false").lower() == "true"
+    MCP_HOST = os.getenv("MCP_HOST", "0.0.0.0")
+    MCP_PORT = int(os.getenv("MCP_PORT", "8765"))
